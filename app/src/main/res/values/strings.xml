@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">C37B</string>
+    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="title_activity_dashboard">DashboardActivity</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_registration">RegistrationActivity</string>
+    <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_add_product">AddProductActivity</string>
+    <string name="add_bike">Add Bike</string>
+    <string name="edit_bike">Edit Bike</string>
+    <string name="delete_bike">Delete Bike</string>
+    <string name="bike_name">Bike Name</string>
+    <string name="last_service_date">Last Service Date (YYYY-MM-DD)</string>
+    <string name="current_mileage">Current Mileage (km)</string>
+    <string name="save">Save</string>
+</resources>
