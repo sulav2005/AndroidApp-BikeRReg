@@ -151,27 +151,66 @@ fun RideListScreen(viewModel: RideViewModel, navController: NavController) {
     val userRole by viewModel.userRole.collectAsState()
     val currentUserEmail by viewModel.currentUser.collectAsState()
     
-    val myRides = rides.filter { it.joinedUsers.contains(currentUserEmail) }
-    val availableRides = rides.filter { !it.joinedUsers.contains(currentUserEmail) }
+    var isSearchActive by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val filteredRides = if (searchQuery.isEmpty()) rides else rides.filter {
+        it.title.contains(searchQuery, ignoreCase = true) || it.destination.contains(searchQuery, ignoreCase = true)
+    }
+
+    val myRides = filteredRides.filter { it.joinedUsers.contains(currentUserEmail) }
+    val availableRides = filteredRides.filter { !it.joinedUsers.contains(currentUserEmail) }
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.DirectionsBike, null, tint = Color.White, modifier = Modifier.size(24.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("BikeRReg", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { }) { Icon(Icons.Default.Search, "Search", tint = Color.White) }
-                    IconButton(onClick = { navController.navigate("profile") }) {
-                        Icon(Icons.Default.AccountCircle, "Profile", tint = Color.White, modifier = Modifier.size(32.dp))
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MotoBlue)
-            )
+            if (isSearchActive) {
+                TopAppBar(
+                    title = {
+                        TextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search rides or destinations...", color = Color.White.copy(alpha = 0.7f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                cursorColor = Color.White,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            ),
+                            singleLine = true,
+                            leadingIcon = { Icon(Icons.Default.Search, null, tint = Color.White) },
+                            trailingIcon = {
+                                IconButton(onClick = { 
+                                    searchQuery = ""
+                                    isSearchActive = false 
+                                }) { Icon(Icons.Default.Close, null, tint = Color.White) }
+                            }
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MotoBlue)
+                )
+            } else {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.DirectionsBike, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("BikeRReg", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { isSearchActive = true }) { Icon(Icons.Default.Search, "Search", tint = Color.White) }
+                        IconButton(onClick = { navController.navigate("profile") }) {
+                            Icon(Icons.Default.AccountCircle, "Profile", tint = Color.White, modifier = Modifier.size(32.dp))
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MotoBlue)
+                )
+            }
         },
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
@@ -200,22 +239,24 @@ fun RideListScreen(viewModel: RideViewModel, navController: NavController) {
         }
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding).fillMaxSize().background(Color(0xFFF2F2F2))) {
-            item {
-                Text(
-                    "Available Rides",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp)
-                )
-            }
-            
-            items(if (userRole == "Organizer") rides else availableRides) { ride ->
-                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    RideItem(ride, userRole, isJoined = ride.joinedUsers.contains(currentUserEmail), onClick = {
-                        navController.navigate("details/${ride.rideId}")
-                    })
+            if (availableRides.isNotEmpty() || (userRole == "Organizer" && filteredRides.isNotEmpty())) {
+                item {
+                    Text(
+                        "Available Rides",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
-                Spacer(Modifier.height(12.dp))
+                
+                items(if (userRole == "Organizer") filteredRides else availableRides) { ride ->
+                    Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        RideItem(ride, userRole, isJoined = ride.joinedUsers.contains(currentUserEmail), onClick = {
+                            navController.navigate("details/${ride.rideId}")
+                        })
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
             }
 
             if (userRole != "Organizer" && myRides.isNotEmpty()) {
@@ -234,6 +275,14 @@ fun RideListScreen(viewModel: RideViewModel, navController: NavController) {
                         })
                     }
                     Spacer(Modifier.height(12.dp))
+                }
+            }
+            
+            if (filteredRides.isEmpty() && searchQuery.isNotEmpty()) {
+                item {
+                    Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No rides found matching \"$searchQuery\"", color = Color.Gray)
+                    }
                 }
             }
         }
