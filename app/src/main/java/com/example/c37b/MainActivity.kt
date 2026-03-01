@@ -32,9 +32,17 @@ fun RideApp(viewModel: RideViewModel) {
     val navController = rememberNavController()
     val currentUser by viewModel.currentUser.collectAsState()
     
-    val startDestination = if (currentUser != null) "list" else "login"
+    val startDestination = "splash"
 
     NavHost(navController = navController, startDestination = startDestination) {
+        composable("splash") {
+            SplashScreen(onFinished = {
+                val nextDestination = if (currentUser != null) "list" else "login"
+                navController.navigate(nextDestination) {
+                    popUpTo("splash") { inclusive = true }
+                }
+            })
+        }
         composable("login") { 
             LoginScreen(navController, viewModel) 
         }
