@@ -21,7 +21,8 @@ class RideViewModel : ViewModel() {
     private val _userRole = MutableStateFlow<String?>(null)
     val userRole: StateFlow<String?> = _userRole
 
-    private val database = FirebaseDatabase.getInstance().getReference("rides")
+
+    private val database = FirebaseDatabase.getInstance("https://bikerideregistrationapp-default-rtdb.firebaseio.com/").getReference("rides")
     private val auth = FirebaseAuth.getInstance()
 
     init {
