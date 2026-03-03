@@ -91,7 +91,8 @@ class RideViewModel : ViewModel() {
                     email = email,
                     phoneNumber = phoneNumber,
                     bikeNumber = bikeNumber,
-                    password = password
+                    password = password,
+                    registrationDate = System.currentTimeMillis()
                 )
                 
                 usersDatabase.child(userId).setValue(user)

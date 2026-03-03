@@ -9,7 +9,8 @@ data class UserModel(
     val gender : String = "",
     val dob : String = "",
     val email : String = "",
-    val password  :String = ""
+    val password  :String = "",
+    val registrationDate: Long = 0L
 ){
     fun toMap() : Map<String,Any?>{
         return mapOf(
@@ -21,7 +22,8 @@ data class UserModel(
            "gender" to gender,
            "dob" to dob,
            "email" to email,
-            "password" to password
+            "password" to password,
+            "registrationDate" to registrationDate
         )
     }
 }
