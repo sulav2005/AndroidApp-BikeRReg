@@ -68,9 +68,18 @@ class RideViewModel : ViewModel() {
             }
     }
 
-    fun signUp(email: String, password: String, phoneNumber: String, onResult: (String?) -> Unit) {
-        if (email.isEmpty() || password.isEmpty() || phoneNumber.isEmpty()) {
+    fun signUp(email: String, password: String, phoneNumber: String, bikeNumber: String, onResult: (String?) -> Unit) {
+        // Simple Validation Logic
+        if (email.isEmpty() || password.isEmpty() || phoneNumber.isEmpty() || bikeNumber.isEmpty()) {
             onResult("Please fill all fields")
+            return
+        }
+        if (phoneNumber.length < 10) {
+            onResult("Phone number must be at least 10 digits")
+            return
+        }
+        if (password.length < 6) {
+            onResult("Password must be at least 6 characters")
             return
         }
 
@@ -81,6 +90,7 @@ class RideViewModel : ViewModel() {
                     id = userId,
                     email = email,
                     phoneNumber = phoneNumber,
+                    bikeNumber = bikeNumber,
                     password = password
                 )
                 

@@ -40,6 +40,7 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
     var email by remember { mutableStateOf("admin@gmail.com") }
     var password by remember { mutableStateOf("password") }
     var phoneNumber by remember { mutableStateOf("") }
+    var bikeNumber by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
@@ -95,6 +96,15 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
             )
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = bikeNumber,
+                onValueChange = { bikeNumber = it },
+                placeholder = { Text("Bike Number") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
         }
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
@@ -119,7 +129,7 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
         Button(
             onClick = {
                 if (isSignUp) {
-                    viewModel.signUp(email, password, phoneNumber) { err ->
+                    viewModel.signUp(email, password, phoneNumber, bikeNumber) { err ->
                         if (err == null) {
                             navController.navigate("list") { popUpTo("login") { inclusive = true } }
                         } else {
