@@ -1,6 +1,8 @@
 package com.example.c37b.ui
 
+import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -44,6 +47,8 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
     var passwordVisible by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
+    
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -131,6 +136,7 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
                 if (isSignUp) {
                     viewModel.signUp(email, password, phoneNumber, bikeNumber) { err ->
                         if (err == null) {
+                            Toast.makeText(context, "Account Registered Successfully", Toast.LENGTH_SHORT).show()
                             navController.navigate("list") { popUpTo("login") { inclusive = true } }
                         } else {
                             error = err
@@ -460,6 +466,8 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
     var showJoinDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    
+    val context = LocalContext.current
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -545,6 +553,8 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
                         val result = viewModel.joinRide(rideId, currentUserEmail!!)
                         if (result != "Success") {
                             scope.launch { snackbarHostState.showSnackbar(result) }
+                        } else {
+                            Toast.makeText(context, "Registered for Ride Successfully", Toast.LENGTH_SHORT).show()
                         }
                         showJoinDialog = false
                     }) { Text("Confirm") }
@@ -596,6 +606,8 @@ fun AddRideScreen(viewModel: RideViewModel, rideId: String? = null, onBack: () -
     
     var expanded by remember { mutableStateOf(false) }
     val difficulties = listOf("Easy", "Moderate", "Hard")
+    
+    val context = LocalContext.current
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -693,8 +705,10 @@ fun AddRideScreen(viewModel: RideViewModel, rideId: String? = null, onBack: () -
                             )
                             if (rideId == null) {
                                 viewModel.addRide(ride)
+                                Toast.makeText(context, "Bike Registered Successfully", Toast.LENGTH_SHORT).show()
                             } else {
                                 viewModel.updateRide(ride)
+                                Toast.makeText(context, "Ride Updated Successfully", Toast.LENGTH_SHORT).show()
                             }
                             onBack()
                         }
