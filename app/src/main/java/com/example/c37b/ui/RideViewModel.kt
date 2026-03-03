@@ -129,11 +129,17 @@ class RideViewModel : ViewModel() {
             }
     }
 
-    fun updatePhoneNumber(newPhoneNumber: String, onResult: (String?) -> Unit) {
+    fun updateProfile(firstName: String, lastName: String, phoneNumber: String, onResult: (String?) -> Unit) {
         val userId = auth.currentUser?.uid ?: return onResult("Not logged in")
-        if (newPhoneNumber.length < 10) return onResult("Phone number must be at least 10 digits")
+        if (phoneNumber.length < 10) return onResult("Phone number must be at least 10 digits")
 
-        usersDatabase.child(userId).child("phoneNumber").setValue(newPhoneNumber)
+        val updates = mapOf(
+            "firstName" to firstName,
+            "lastName" to lastName,
+            "phoneNumber" to phoneNumber
+        )
+
+        usersDatabase.child(userId).updateChildren(updates)
             .addOnSuccessListener { onResult(null) }
             .addOnFailureListener { onResult(it.message) }
     }

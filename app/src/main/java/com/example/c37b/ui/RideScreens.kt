@@ -406,6 +406,8 @@ fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
     val userDetails by viewModel.userDetails.collectAsState()
     
     var isEditing by remember { mutableStateOf(false) }
+    var firstName by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
     var editedPhone by remember { mutableStateOf("") }
     
     val context = LocalContext.current
@@ -422,6 +424,8 @@ fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
                 actions = {
                     if (userDetails != null && !isEditing) {
                         IconButton(onClick = { 
+                            firstName = userDetails?.firstName ?: ""
+                            lastName = userDetails?.lastName ?: ""
                             editedPhone = userDetails?.phoneNumber ?: ""
                             isEditing = true 
                         }) {
@@ -447,21 +451,37 @@ fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
             
             Spacer(Modifier.height(16.dp))
             
-            Text(text = "Phone Number", color = Color.Gray, fontSize = 14.sp)
             if (isEditing) {
+                OutlinedTextField(
+                    value = firstName,
+                    onValueChange = { firstName = it },
+                    label = { Text("First Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = lastName,
+                    onValueChange = { lastName = it },
+                    label = { Text("Last Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
                     value = editedPhone,
                     onValueChange = { editedPhone = it },
+                    label = { Text("Phone Number") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     singleLine = true
                 )
-                Row(modifier = Modifier.padding(top = 8.dp)) {
+                Row(modifier = Modifier.padding(top = 16.dp)) {
                     Button(onClick = {
-                        viewModel.updatePhoneNumber(editedPhone) { err ->
+                        viewModel.updateProfile(firstName, lastName, editedPhone) { err ->
                             if (err == null) {
                                 isEditing = false
-                                Toast.makeText(context, "Phone Updated", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Profile Updated", Toast.LENGTH_SHORT).show()
                             } else {
                                 Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
                             }
@@ -471,13 +491,19 @@ fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
                     OutlinedButton(onClick = { isEditing = false }, modifier = Modifier.weight(1f)) { Text("Cancel") }
                 }
             } else {
+                Text(text = "Name", color = Color.Gray, fontSize = 14.sp)
+                Text(text = "${userDetails?.firstName ?: ""} ${userDetails?.lastName ?: ""}".ifBlank { "N/A" }, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                
+                Spacer(Modifier.height(16.dp))
+                
+                Text(text = "Phone Number", color = Color.Gray, fontSize = 14.sp)
                 Text(text = userDetails?.phoneNumber ?: "N/A", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                
+                Spacer(Modifier.height(16.dp))
+                
+                Text(text = "Bike Number", color = Color.Gray, fontSize = 14.sp)
+                Text(text = userDetails?.bikeNumber ?: "N/A", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
             }
-            
-            Spacer(Modifier.height(16.dp))
-            
-            Text(text = "Bike Number", color = Color.Gray, fontSize = 14.sp)
-            Text(text = userDetails?.bikeNumber ?: "N/A", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
 
             Spacer(Modifier.weight(1f))
 
