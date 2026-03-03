@@ -3,6 +3,7 @@ package com.example.c37b.ui
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import com.example.c37b.model.Ride
+import com.example.c37b.model.UserModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +24,7 @@ class RideViewModel : ViewModel() {
 
 
     private val database = FirebaseDatabase.getInstance("https://bikerideregistrationapp-default-rtdb.firebaseio.com/").getReference("rides")
+    private val usersDatabase = FirebaseDatabase.getInstance("https://bikerideregistrationapp-default-rtdb.firebaseio.com/").getReference("users")
     private val auth = FirebaseAuth.getInstance()
 
     init {
@@ -66,17 +68,31 @@ class RideViewModel : ViewModel() {
             }
     }
 
-    fun signUp(email: String, password: String, onResult: (String?) -> Unit) {
-        if (email.isEmpty() || password.isEmpty()) {
+    fun signUp(email: String, password: String, phoneNumber: String, onResult: (String?) -> Unit) {
+        if (email.isEmpty() || password.isEmpty() || phoneNumber.isEmpty()) {
             onResult("Please fill all fields")
             return
         }
 
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                _currentUser.value = email
-                _userRole.value = if (email == "admin@gmail.com") "Organizer" else "User"
-                onResult(null)
+            .addOnSuccessListener { result ->
+                val userId = result.user?.uid ?: ""
+                val user = UserModel(
+                    id = userId,
+                    email = email,
+                    phoneNumber = phoneNumber,
+                    password = password
+                )
+                
+                usersDatabase.child(userId).setValue(user)
+                    .addOnSuccessListener {
+                        _currentUser.value = email
+                        _userRole.value = if (email == "admin@gmail.com") "Organizer" else "User"
+                        onResult(null)
+                    }
+                    .addOnFailureListener {
+                        onResult("Auth success, but failed to save user data: ${it.message}")
+                    }
             }
             .addOnFailureListener {
                 onResult(it.message ?: "Sign Up Failed")

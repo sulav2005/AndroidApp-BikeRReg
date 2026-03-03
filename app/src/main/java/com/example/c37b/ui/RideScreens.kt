@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -37,6 +39,7 @@ val MotoBlue = Color(0xFF1A4480)
 fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
     var email by remember { mutableStateOf("admin@gmail.com") }
     var password by remember { mutableStateOf("password") }
+    var phoneNumber by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var isSignUp by remember { mutableStateOf(false) }
@@ -81,6 +84,18 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
             shape = RoundedCornerShape(8.dp),
             singleLine = true
         )
+        if (isSignUp) {
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { phoneNumber = it },
+                placeholder = { Text("Phone Number") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+        }
         Spacer(Modifier.height(16.dp))
         OutlinedTextField(
             value = password,
@@ -104,7 +119,7 @@ fun LoginScreen(navController: NavController, viewModel: RideViewModel) {
         Button(
             onClick = {
                 if (isSignUp) {
-                    viewModel.signUp(email, password) { err ->
+                    viewModel.signUp(email, password, phoneNumber) { err ->
                         if (err == null) {
                             navController.navigate("list") { popUpTo("login") { inclusive = true } }
                         } else {
