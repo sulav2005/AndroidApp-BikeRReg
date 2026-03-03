@@ -464,6 +464,7 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
     val userRole by viewModel.userRole.collectAsState()
     
     var showJoinDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
@@ -481,10 +482,9 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
                 },
                 actions = {
                     if (userRole == "Organizer") {
-                        IconButton(onClick = {
-                            viewModel.deleteRide(rideId)
-                            navController.popBackStack()
-                        }) { Icon(Icons.Default.Delete, "Delete", tint = Color.Red) }
+                        IconButton(onClick = { showDeleteDialog = true }) { 
+                            Icon(Icons.Default.Delete, "Delete", tint = Color.Red) 
+                        }
                     }
                 }
             )
@@ -561,6 +561,28 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
                 },
                 dismissButton = {
                     TextButton(onClick = { showJoinDialog = false }) { Text("Cancel") }
+                }
+            )
+        }
+
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Delete Ride") },
+                text = { Text("Are you sure you want to permanently delete this ride? This action cannot be undone.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.deleteRide(rideId)
+                            showDeleteDialog = false
+                            Toast.makeText(context, "Ride Deleted Successfully", Toast.LENGTH_SHORT).show()
+                            navController.popBackStack()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
+                    ) { Text("Delete") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
                 }
             )
         }
