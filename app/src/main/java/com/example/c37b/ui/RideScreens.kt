@@ -403,8 +403,12 @@ fun MyRidesOnlyScreen(viewModel: RideViewModel, navController: NavController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
-    val currentUserEmail by viewModel.currentUser.collectAsState()
-    val userRole by viewModel.userRole.collectAsState()
+    val userDetails by viewModel.userDetails.collectAsState()
+    
+    var isEditing by remember { mutableStateOf(false) }
+    var editedPhone by remember { mutableStateOf("") }
+    
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -413,6 +417,16 @@ fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, "Back")
+                    }
+                },
+                actions = {
+                    if (userDetails != null && !isEditing) {
+                        IconButton(onClick = { 
+                            editedPhone = userDetails?.phoneNumber ?: ""
+                            isEditing = true 
+                        }) {
+                            Icon(Icons.Default.Edit, "Edit Profile")
+                        }
                     }
                 }
             )
@@ -423,18 +437,47 @@ fun ProfileScreen(viewModel: RideViewModel, navController: NavController) {
                 modifier = Modifier.size(100.dp).clip(CircleShape).background(MotoBlue),
                 contentAlignment = Alignment.Center
             ) {
-                Text(currentUserEmail?.take(1)?.uppercase() ?: "U", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
+                Text(userDetails?.email?.take(1)?.uppercase() ?: "U", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Bold)
             }
             
             Spacer(Modifier.height(24.dp))
             
             Text(text = "Email", color = Color.Gray, fontSize = 14.sp)
-            Text(text = currentUserEmail ?: "Guest", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = userDetails?.email ?: "Guest", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
             
             Spacer(Modifier.height(16.dp))
             
-            Text(text = "Account Role", color = Color.Gray, fontSize = 14.sp)
-            Text(text = userRole ?: "N/A", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text(text = "Phone Number", color = Color.Gray, fontSize = 14.sp)
+            if (isEditing) {
+                OutlinedTextField(
+                    value = editedPhone,
+                    onValueChange = { editedPhone = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true
+                )
+                Row(modifier = Modifier.padding(top = 8.dp)) {
+                    Button(onClick = {
+                        viewModel.updatePhoneNumber(editedPhone) { err ->
+                            if (err == null) {
+                                isEditing = false
+                                Toast.makeText(context, "Phone Updated", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }, modifier = Modifier.weight(1f)) { Text("Save") }
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedButton(onClick = { isEditing = false }, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                }
+            } else {
+                Text(text = userDetails?.phoneNumber ?: "N/A", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            }
+            
+            Spacer(Modifier.height(16.dp))
+            
+            Text(text = "Bike Number", color = Color.Gray, fontSize = 14.sp)
+            Text(text = userDetails?.bikeNumber ?: "N/A", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
 
             Spacer(Modifier.weight(1f))
 

@@ -22,6 +22,9 @@ class RideViewModel : ViewModel() {
     private val _userRole = MutableStateFlow<String?>(null)
     val userRole: StateFlow<String?> = _userRole
 
+    private val _userDetails = MutableStateFlow<UserModel?>(null)
+    val userDetails: StateFlow<UserModel?> = _userDetails
+
 
     private val database = FirebaseDatabase.getInstance("https://bikerideregistrationapp-default-rtdb.firebaseio.com/").getReference("rides")
     private val usersDatabase = FirebaseDatabase.getInstance("https://bikerideregistrationapp-default-rtdb.firebaseio.com/").getReference("users")
@@ -29,8 +32,13 @@ class RideViewModel : ViewModel() {
 
     init {
         // Sync currentUser with Firebase Auth
-        _currentUser.value = auth.currentUser?.email
-        _userRole.value = if (auth.currentUser?.email == "admin@gmail.com") "Organizer" else "User"
+        val currentEmail = auth.currentUser?.email
+        _currentUser.value = currentEmail
+        _userRole.value = if (currentEmail == "admin@gmail.com") "Organizer" else "User"
+        
+        if (auth.currentUser != null) {
+            fetchUserDetails(auth.currentUser?.uid ?: "")
+        }
 
         // Sync Rides from Firebase Realtime Database
         database.addValueEventListener(object : ValueEventListener {
@@ -51,6 +59,15 @@ class RideViewModel : ViewModel() {
         })
     }
 
+    private fun fetchUserDetails(userId: String) {
+        usersDatabase.child(userId).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                _userDetails.value = snapshot.getValue(UserModel::class.java)
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
     fun login(email: String, password: String, onResult: (String?) -> Unit) {
         if (email.isEmpty() || password.isEmpty()) {
             onResult("Please fill all fields")
@@ -58,9 +75,11 @@ class RideViewModel : ViewModel() {
         }
 
         auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
+            .addOnSuccessListener { result ->
+                val user = result.user
                 _currentUser.value = email
                 _userRole.value = if (email == "admin@gmail.com") "Organizer" else "User"
+                fetchUserDetails(user?.uid ?: "")
                 onResult(null)
             }
             .addOnFailureListener {
@@ -69,7 +88,6 @@ class RideViewModel : ViewModel() {
     }
 
     fun signUp(email: String, password: String, phoneNumber: String, bikeNumber: String, onResult: (String?) -> Unit) {
-        // Simple Validation Logic
         if (email.isEmpty() || password.isEmpty() || phoneNumber.isEmpty() || bikeNumber.isEmpty()) {
             onResult("Please fill all fields")
             return
@@ -99,6 +117,7 @@ class RideViewModel : ViewModel() {
                     .addOnSuccessListener {
                         _currentUser.value = email
                         _userRole.value = if (email == "admin@gmail.com") "Organizer" else "User"
+                        _userDetails.value = user
                         onResult(null)
                     }
                     .addOnFailureListener {
@@ -110,10 +129,20 @@ class RideViewModel : ViewModel() {
             }
     }
 
+    fun updatePhoneNumber(newPhoneNumber: String, onResult: (String?) -> Unit) {
+        val userId = auth.currentUser?.uid ?: return onResult("Not logged in")
+        if (newPhoneNumber.length < 10) return onResult("Phone number must be at least 10 digits")
+
+        usersDatabase.child(userId).child("phoneNumber").setValue(newPhoneNumber)
+            .addOnSuccessListener { onResult(null) }
+            .addOnFailureListener { onResult(it.message) }
+    }
+
     fun logout() {
         auth.signOut()
         _currentUser.value = null
         _userRole.value = null
+        _userDetails.value = null
     }
 
     fun addRide(ride: Ride) {
