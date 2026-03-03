@@ -165,7 +165,7 @@ class RideViewModel : ViewModel() {
         database.child(rideId).removeValue()
     }
 
-    fun joinRide(rideId: String, userEmail: String): String {
+    fun joinRide(rideId: String, userEmail: String, note: String): String {
         val ride = _rides.find { it.rideId == rideId } ?: return "Error"
         
         if (ride.joinedUsers.size >= ride.maxRiders) return "Full"
@@ -174,10 +174,17 @@ class RideViewModel : ViewModel() {
         val updatedUsers = ride.joinedUsers.toMutableList()
         updatedUsers.add(userEmail)
         
+        val updatedNotes = ride.userNotes.toMutableMap()
+        if (note.isNotEmpty()) {
+            val key = userEmail.replace(".", ",") // Firebase keys can't have dots
+            updatedNotes[key] = note
+        }
+        
         val newStatus = if (updatedUsers.size >= ride.maxRiders) "Full" else ride.status
         
         database.child(rideId).updateChildren(mapOf(
             "joinedUsers" to updatedUsers,
+            "userNotes" to updatedNotes,
             "status" to newStatus
         ))
         
@@ -188,8 +195,12 @@ class RideViewModel : ViewModel() {
         val ride = _rides.find { it.rideId == rideId } ?: return
         val updatedUsers = ride.joinedUsers.toMutableList()
         if (updatedUsers.remove(userEmail)) {
+            val updatedNotes = ride.userNotes.toMutableMap()
+            updatedNotes.remove(userEmail.replace(".", ","))
+            
             database.child(rideId).updateChildren(mapOf(
                 "joinedUsers" to updatedUsers,
+                "userNotes" to updatedNotes,
                 "status" to "Open"
             ))
         }

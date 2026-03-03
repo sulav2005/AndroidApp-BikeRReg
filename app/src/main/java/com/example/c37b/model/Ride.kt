@@ -11,6 +11,7 @@ data class Ride(
     val difficulty: String = "", // Easy, Moderate, Hard
     val maxRiders: Int = 10,
     val joinedUsers: MutableList<String> = mutableListOf(),
+    val userNotes: MutableMap<String, String> = mutableMapOf(), // email -> note
     val organizerId: String = "",
     val status: String = "Open", // Open, Full, Completed
     val imageUrl: String = ""

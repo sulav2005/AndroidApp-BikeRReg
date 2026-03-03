@@ -186,7 +186,9 @@ fun RideListScreen(viewModel: RideViewModel, navController: NavController) {
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredRides = if (searchQuery.isEmpty()) rides else rides.filter {
-        it.title.contains(searchQuery, ignoreCase = true) || it.destination.contains(searchQuery, ignoreCase = true)
+        it.title.contains(searchQuery, ignoreCase = true) || 
+        it.destination.contains(searchQuery, ignoreCase = true) ||
+        it.bikeNumber.contains(searchQuery, ignoreCase = true)
     }
 
     val myRides = filteredRides.filter { it.joinedUsers.contains(currentUserEmail) }
@@ -200,7 +202,7 @@ fun RideListScreen(viewModel: RideViewModel, navController: NavController) {
                         TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
-                            placeholder = { Text("Search rides or destinations...", color = Color.White.copy(alpha = 0.7f)) },
+                            placeholder = { Text("Search rides, destinations or bike #...", color = Color.White.copy(alpha = 0.7f)) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
@@ -534,6 +536,8 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
     
     var showJoinDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var userNote by remember { mutableStateOf("") }
+    
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
@@ -566,47 +570,87 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
                 modifier = Modifier.fillMaxWidth().height(200.dp),
                 contentScale = ContentScale.Crop
             )
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(ride.title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                DifficultyBadge(ride.difficulty)
-                Spacer(Modifier.height(16.dp))
-                DetailRow(Icons.Default.Place, "Destination", ride.destination)
-                DetailRow(Icons.Default.DateRange, "Date", ride.date)
-                DetailRow(Icons.Default.LocationOn, "Meetup", ride.meetupLocation)
-                DetailRow(Icons.Default.Info, "Bike Type", ride.bikeType)
-                DetailRow(Icons.Default.Person, "Riders", "${ride.joinedUsers.size} / ${ride.maxRiders}")
-                
-                Spacer(Modifier.weight(1f))
-                
+            LazyColumn(modifier = Modifier.padding(16.dp).fillMaxSize()) {
+                item {
+                    Text(ride.title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    DifficultyBadge(ride.difficulty)
+                    Spacer(Modifier.height(16.dp))
+                    DetailRow(Icons.Default.Place, "Destination", ride.destination)
+                    DetailRow(Icons.Default.DateRange, "Date", ride.date)
+                    DetailRow(Icons.Default.LocationOn, "Meetup", ride.meetupLocation)
+                    DetailRow(Icons.Default.Info, "Bike Type", ride.bikeType)
+                    DetailRow(Icons.Default.Pin, "Bike #", ride.bikeNumber)
+                    DetailRow(Icons.Default.Person, "Riders", "${ride.joinedUsers.size} / ${ride.maxRiders}")
+                    
+                    Spacer(Modifier.height(24.dp))
+                }
+
                 if (userRole == "Organizer") {
-                    Button(
-                        onClick = { 
-                            navController.navigate("edit_ride/${ride.rideId}")
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = MotoBlue)
-                    ) { Text("Edit Ride Details") }
-                } else {
-                    if (ride.status != "Completed") {
-                        if (isJoined) {
-                            Button(
-                                onClick = { viewModel.leaveRide(rideId, currentUserEmail!!) },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-                            ) { Text("Cancel Ride") }
-                        } else if (ride.status == "Open") {
-                            Button(
-                                onClick = { showJoinDialog = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = ButtonDefaults.buttonColors(containerColor = MotoBlue)
-                            ) { Text("Register for Ride") }
-                        } else {
-                            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-                                Text("Ride is Full")
+                    item {
+                        Button(
+                            onClick = { 
+                                navController.navigate("edit_ride/${ride.rideId}")
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = MotoBlue)
+                        ) { Text("Edit Ride Details") }
+                        
+                        Spacer(Modifier.height(24.dp))
+                        Text("Registered Rider Notes", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    
+                    if (ride.userNotes.isEmpty()) {
+                        item { Text("No notes from riders yet.", color = Color.Gray, fontSize = 14.sp) }
+                    } else {
+                        items(ride.userNotes.toList()) { (email, note) ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.LightGray.copy(alpha = 0.2f))
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(email.replace(",", "."), fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = MotoBlue)
+                                    Text(note, fontSize = 14.sp)
+                                }
                             }
                         }
-                    } else {
-                        Text("This ride has already been completed.", modifier = Modifier.align(Alignment.CenterHorizontally), color = Color.Gray)
+                    }
+                } else {
+                    item {
+                        if (ride.status != "Completed") {
+                            if (isJoined) {
+                                val myNote = ride.userNotes[currentUserEmail?.replace(".", ",")]
+                                if (myNote != null) {
+                                    Text("Your Note:", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text(myNote, fontSize = 14.sp, modifier = Modifier.padding(bottom = 16.dp))
+                                }
+                                Button(
+                                    onClick = { viewModel.leaveRide(rideId, currentUserEmail!!) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                                ) { Text("Cancel Ride") }
+                            } else if (ride.status == "Open") {
+                                OutlinedTextField(
+                                    value = userNote,
+                                    onValueChange = { userNote = it },
+                                    label = { Text("Add a note (optional)") },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    placeholder = { Text("e.g. Bringing a helmet") }
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Button(
+                                    onClick = { showJoinDialog = true },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = ButtonDefaults.buttonColors(containerColor = MotoBlue)
+                                ) { Text("Register for Ride") }
+                            } else {
+                                Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
+                                    Text("Ride is Full")
+                                }
+                            }
+                        } else {
+                            Text("This ride has already been completed.", modifier = Modifier.align(Alignment.CenterHorizontally), color = Color.Gray)
+                        }
                     }
                 }
             }
@@ -619,7 +663,7 @@ fun RideDetailsScreen(rideId: String, viewModel: RideViewModel, navController: N
                 text = { Text("Do you want to join this ride to ${ride.destination}?") },
                 confirmButton = {
                     TextButton(onClick = {
-                        val result = viewModel.joinRide(rideId, currentUserEmail!!)
+                        val result = viewModel.joinRide(rideId, currentUserEmail!!, userNote)
                         if (result != "Success") {
                             scope.launch { snackbarHostState.showSnackbar(result) }
                         } else {
@@ -691,6 +735,7 @@ fun AddRideScreen(viewModel: RideViewModel, rideId: String? = null, onBack: () -
     var date by remember { mutableStateOf(rideToEdit?.date ?: "") }
     var meetup by remember { mutableStateOf(rideToEdit?.meetupLocation ?: "") }
     var bikeType by remember { mutableStateOf(rideToEdit?.bikeType ?: "") }
+    var bikeNumber by remember { mutableStateOf(rideToEdit?.bikeNumber ?: "") }
     var maxRiders by remember { mutableStateOf(rideToEdit?.maxRiders?.toString() ?: "10") }
     var difficulty by remember { mutableStateOf(rideToEdit?.difficulty ?: "Easy") }
     var imageUrl by remember { mutableStateOf(rideToEdit?.imageUrl ?: "") }
@@ -764,6 +809,7 @@ fun AddRideScreen(viewModel: RideViewModel, rideId: String? = null, onBack: () -
                 OutlinedTextField(date, { date = it }, label = { Text("Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(meetup, { meetup = it }, label = { Text("Meetup Location") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(bikeType, { bikeType = it }, label = { Text("Bike Type") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(bikeNumber, { bikeNumber = it }, label = { Text("Bike Number") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(maxRiders, { maxRiders = it }, label = { Text("Max Riders") }, modifier = Modifier.fillMaxWidth())
                 
                 Spacer(Modifier.height(16.dp))
@@ -790,6 +836,7 @@ fun AddRideScreen(viewModel: RideViewModel, rideId: String? = null, onBack: () -
                                 date = date,
                                 meetupLocation = meetup,
                                 bikeType = bikeType,
+                                bikeNumber = bikeNumber,
                                 maxRiders = maxRiders.toIntOrNull() ?: 10,
                                 difficulty = difficulty,
                                 imageUrl = imageUrl
