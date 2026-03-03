@@ -7,6 +7,7 @@ data class Ride(
     val date: String = "",
     val meetupLocation: String = "",
     val bikeType: String = "",
+    val bikeNumber: String = "",
     val difficulty: String = "", // Easy, Moderate, Hard
     val maxRiders: Int = 10,
     val joinedUsers: MutableList<String> = mutableListOf(),
